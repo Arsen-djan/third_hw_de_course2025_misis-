@@ -28,7 +28,7 @@ def load_month_data(**kwargs):
     year = prev_date.year
     month = prev_date.month
 
-    # Чтение из HDFS
+    ## чтение из hdfs
     df = spark.read.option("header", True).csv("hdfs:///user/ubuntu/nashville_accidents/nashville_accidents_2018_2025.csv")
 
     df = df.withColumn('Date and Time', F.to_timestamp('Date and Time', 'M/d/yyyy h:mm:ss a'))
@@ -68,7 +68,7 @@ def update_hive_tables(**kwargs):
 
     df = spark.table("etl_project_db.monthly_data_temp")
 
-    # First table
+    ## first_table
     first_table = df.select(
         "accident_number",
         "date",
@@ -84,7 +84,7 @@ def update_hive_tables(**kwargs):
 
     first_table.write.mode("append").format("orc").saveAsTable("etl_project_db.first_table")
 
-    # Second table
+    ## second_table
     second_table = df.select(
         "accident_number",
         "date",
@@ -104,7 +104,7 @@ def update_hive_tables(**kwargs):
 
     second_table.write.mode("append").format("orc").saveAsTable("etl_project_db.second_table")
 
-    # Third table
+    ## third_table
     third_table = df.select(
         "accident_number",
         "date",
@@ -134,7 +134,7 @@ def replicate_to_postgres(**kwargs):
     jdbc_url = "jdbc:postgresql://158.160.133.10:5432/mydatabase"
     props = {"user": "myuser", "password": "mypassword", "driver": "org.postgresql.Driver"}
 
-    # First table
+    ## first_table
     df1 = spark.table("etl_project_db.first_table")
     agg1 = df1.filter((F.year("date") == year) & (F.month("date") == month)) \
         .groupBy(
@@ -148,7 +148,7 @@ def replicate_to_postgres(**kwargs):
 
     agg1.write.jdbc(url=jdbc_url, table="injuries_and_fatalities_per_month", mode="overwrite", properties=props)
 
-    # Second table
+    ## second_table
     df2 = spark.table("etl_project_db.second_table")
     agg2 = df2.filter((F.year("date") == year) & (F.month("date") == month)) \
         .groupBy(
@@ -161,7 +161,7 @@ def replicate_to_postgres(**kwargs):
 
     agg2.write.jdbc(url=jdbc_url, table="number_of_motor_vehicles_per_month", mode="overwrite", properties=props)
 
-    # Third table
+    ## third_table
     df3 = spark.table("etl_project_db.third_table")
     df3 = df3.withColumn('column', F.lit(1))
     agg3 = df3.filter((F.year("date") == year) & (F.month("date") == month)) \
